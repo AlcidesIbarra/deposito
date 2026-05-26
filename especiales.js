@@ -1,4 +1,4 @@
-const API_URL = 'api.php';
+const API_URL = 'http://deposito.infinityfreeapp.com/api.php';
 
 // Estado operativo en memoria
 let sucursalActiva = 1;

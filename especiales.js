@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:50/deposito/api.php';
+const API_URL = 'api.php';
 
 // Estado operativo en memoria
 let sucursalActiva = 1;

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:50/deposito/api.php';
+const API_URL = 'api.php';
 
 // Estado de simulación inicial para la mesa de trabajo local
 let usuarioMock = { usuario: "tester", rol: "deposito" };

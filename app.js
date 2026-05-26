@@ -1,4 +1,4 @@
-const API_URL = 'https://deposito.infinityfreeapp.com/api.php';
+const API_URL = 'https://deposito.infinityfreeapp.com/api.php'; 
 
 // Estado de simulación inicial para la mesa de trabajo local
 let usuarioMock = { usuario: "tester", rol: "deposito" };

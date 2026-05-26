@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos Especiales - Sucursal</title>
+    <link rel="stylesheet" href="especiales.css">
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR GRIS OSCURA FIJA -->
+    <header class="top-bar-especial">
+        <div class="header-left">
+            <a href="index.html" class="btn-volver">⬅ Volver</a>
+            <h2 id="titulo-pagina-especial">🛒 Pedidos Especiales</h2>
+        </div>
+        <div id="sucursal-badge" class="sucursal-header-badge">Sucursal 1</div>
+    </header>
+
+    <!-- PANEL CENTRAL DE CARGA DE ARTÍCULOS -->
+    <main class="main-container-especial">
+        <section class="search-section">
+            <label class="label-especial">Buscar Producto (Descripción, Código o Barra)</label>
+            <div class="search-box-row">
+                <!-- Buscador con sugerencias de texto Autocomplete predictivo -->
+                <input type="text" id="input-busqueda-pred" placeholder="Escribí descripción, código o barra..." autocomplete="off" onclick="this.select()">
+                <input type="number" id="input-cantidad-especial" value="1" min="1" placeholder="Cant." onclick="this.select()">
+                <button id="btn-agregar-lista" onclick="agregarProductoAListaTemporal()">＋ Agregar</button>
+            </div>
+            
+            <!-- Lista desplegable flotante de coincidencias conectada a la API -->
+            <div id="sugerencias-box" class="autocomplete-suggestions" style="display: none;"></div>
+        </section>
+        <!-- TABLA CONTENEDORA DE PRE-CARGA CON DETECCIÓN DE CRUCE -->
+        <section class="list-section">
+            <div class="section-title-row">
+                <h3>📝 Mi Lista Temporal (Antes del Pedido General)</h3>
+                <span id="contador-items" class="counter-badge">0 productos</span>
+            </div>
+            
+            <!-- JavaScript inyectará aquí filas rectas en PC o tarjetas compactas en celulares -->
+            <div id="tabla-especiales-container" class="table-responsive-container"></div>
+        </section>
+    </main>
+
+    <!-- BARRA DE ACCIONES INFERIOR FIXED (ESTILO APP NATIVA) -->
+    <footer class="bottom-bar-especial">
+        <button class="btn-clear-all" onclick="limpiarListaTemporalCompleta()">🗑️ Borrar Todo</button>
+        <button class="btn-save-especial" onclick="guardarYCombinarPedidoEspecial()">🔒 Confirmar y Juntar con Pedido General</button>
+    </footer>
+
+    <script src="especiales.js"></script>
+</body>
+</html>

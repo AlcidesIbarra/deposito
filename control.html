@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control y Despacho</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 70px 6px 20px 6px !important; }
+        .control-container { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+        .sucursal-acordeon { background: white; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sucursal-cabecera { padding: 14px; background-color: #0f172a; color: white; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
+        .sucursal-cabecera::after { content: '▼'; font-size: 0.75rem; transition: transform 0.2s; }
+        .sucursal-acordeon.abierto .sucursal-cabecera::after { transform: rotate(180deg); }
+        .sucursal-contenido { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding: 0 14px; background: #fff; }
+        .sucursal-acordeon.abierto .sucursal-contenido { max-height: 2000px; padding: 15px 14px; }
+        
+        .tabla-items { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.85rem; }
+        .tabla-items th { text-align: left; padding: 6px; background: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1; }
+        .tabla-items td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; }
+        
+        .seccion-firma-despacho { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .box-firma-digital { border: 1px solid #cbd5e1; background: white; border-radius: 4px; position: relative; height: 120px; width: 100%; cursor: crosshair; }
+        .canvas-firma { width: 100%; height: 100%; display: block; }
+        .btn-clear-canvas { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: #ef4444; color: white; border: none; padding: 4px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        
+        .input-control-txt { width: 100%; height: 36px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 0 10px; font-size: 0.85rem; }
+.btn-entregado-final { 
+    width: 100%; 
+    height: 42px; 
+    background-color: #0f172a; /* 👈 Cambiado a Negro Mate / Slate Oscuro de inicio */
+    color: white; 
+    border: none; 
+    border-radius: 6px; 
+    font-size: 0.9rem; 
+    font-weight: bold; 
+    cursor: pointer; 
+    margin-top: 5px;
+    transition: background-color 0.25s ease; /* Transición suave para el cambio de color */
+}
+        .btn-regresar-mesa { display: inline-block; width: 100%; height: 38px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: bold; border-radius: 6px; line-height: 36px; text-align: center; text-decoration: none; font-size: 0.85rem; margin-top: 10px; }
+ 
+ /* ========================================================
+   🎨 ESTADOS DE TARJETA EN CONTROL Y DESPACHO
+   ======================================================== */
+
+/* Estado inicial: Negro/Gris Slate por defecto */
+.sucursal-acordeon {
+    transition: all 0.25s ease-in-out;
+}
+
+/* Estado finalizado: Al confirmar la entrega, pasa a verde menta brillante */
+.tarjeta-despacho-entregada {
+    border: 1px solid #22c55e !important;
+    background-color: #f0fdf4 !important; /* Fondo menta limpio */
+}
+.tarjeta-despacho-entregada .sucursal-cabecera {
+    background-color: #22c55e !important; /* Cabecera verde brillante */
+    color: white !important;
+}
+.tarjeta-despacho-entregada .sucursal-contenido {
+    background-color: #f0fdf4 !important; /* Interior menta limpio */
+}
+
+ </style>
+</head>
+<body>
+
+    <header class="top-bar">
+        <h2>🚚 Control y Despacho General</h2>
+        <a href="index.html" style="color:white; text-decoration:none; font-size:1.2rem;">✕</a>
+    </header>
+
+    <main class="control-container" id="box-sucursales-listado">
+        <!-- Las sucursales preparadas se inyectarán de forma dinámica aquí -->
+    </main>
+
+    <div style="padding: 0 10px;">
+        <a href="index.html" class="btn-regresar-mesa">Volver a la Mesa de Carga</a>
+    </div>
+
+        <!-- 🔔 TOAST DE CONFIRMACIÓN FLOTANTE CENTRAL PREMIUM -->
+    <div id="toast-centro-control" style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background-color: #1e293b;
+        color: #ffffff;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center;
+        width: 85%;
+        max-width: 320px;
+    ">
+        <span style="font-size: 2.2rem;">🚚</span>
+        <span id="txt-toast-control-mensaje" style="font-size: 0.95rem; font-weight: bold; line-height: 1.4;">¡Pedido despachado y entregado con éxito!</span>
+    </div>
+
+
+    <!-- 3. LÓGICA DE CONTROL, CAPTURA DE TRAZOS Y ENVÍO A MYSQL -->
+    <script>
+        const API_URL = 'http://localhost:50/deposito/api.php';
+        let datosAgrupadosGlobal = {};
+        let canvasActivos = {}; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Consultamos las sucursales secuencialmente basándonos en el panel del index
+            cargarLoteSucursalesSecuencial();
+        });
+
+        async function cargarLoteSucursalesSecuencial() {
+            let contenedor = document.getElementById('box-sucursales-listado');
+            contenedor.innerHTML = '<p style="text-align:center; color:#666; font-size:0.85rem; padding: 20px;">Procesando bultos en depósito...</p>';
+            
+            datosAgrupadosGlobal = {};
+            
+            // Recorremos las 7 sucursales del panel de testeo
+            for (let s = 1; s <= 7; s++) {
+                try {
+                    let res = await fetch(`${API_URL}?accion=listar_pedidos&sucursal=${s}&id_pedido_sistema=1001`);
+                    if(!res.ok) continue;
+                    let pedidos = await res.json();
+                    
+                    // Filtramos únicamente los ítems que ya están PREPARADOS pero NO entregados
+                    let preparados = pedidos.filter(p => parseInt(p.preparado) === 1 && parseInt(p.enviado) === 0 && parseInt(p.entregado || 0) === 0);
+                    
+                    if (preparados.length > 0) {
+                        datosAgrupadosGlobal[s] = preparados;
+                    }
+                } catch(e) {}
+            }
+            
+            renderizarAcordeonesSucursales();
+        }
+
+        function renderizarAcordeonesSucursales() {
+            let contenedor = document.getElementById('box-sucursales-listado');
+            contenedor.innerHTML = '';
+            
+            let sucursalesConCarga = Object.keys(datosAgrupadosGlobal);
+            
+            if (sucursalesConCarga.length === 0) {
+                contenedor.innerHTML = '<p style="text-align:center; padding:40px; color:#64748b; font-size:0.85rem;">No se encontraron pedidos preparados pendientes de despacho en ninguna sucursal.</p>';
+                return;
+            }
+
+            sucursalesConCarga.forEach(sucId => {
+                let items = datosAgrupadosGlobal[sucId];
+                
+                let tablaHtml = '';
+                items.forEach(it => {
+                    tablaHtml += `<tr>
+                        <td><strong>[${it.marca || 'S/M'}]</strong> ${it.nombre}</td>
+                        <td style="text-align:center; font-weight:bold;">${it.cantidad}</td>
+                    </tr>`;
+                });
+
+                contenedor.innerHTML += `
+                    <div class="sucursal-acordeon" id="acordeon-suc-${sucId}">
+                        <div class="sucursal-cabecera" onclick="toggleSucursalAcordeon(${sucId})">
+                            <span>🏢 SUCURSAL ${sucId} (${items.length} Bultos Listos)</span>
+                        </div>
+                        <div class="sucursal-contenido">
+                            <table class="tabla-items">
+                                <thead>
+                                    <tr><th>Producto</th><th style="text-align:center; width:60px;">Cant.</th></tr>
+                                </thead>
+                                <tbody>${tablaHtml}</tbody>
+                            </table>
+                            
+                            <!-- Panel de Firma Digital Táctil Incorporado -->
+                            <div class="seccion-firma-despacho">
+                                <span style="font-size:0.78rem; font-weight:bold; color:#475569;">✍️ Firma de conformidad en pantalla:</span>
+                                <div class="box-firma-digital">
+                                    <canvas id="canvas-suc-${sucId}" class="canvas-firma"></canvas>
+                                    <button class="btn-clear-canvas" onclick="limpiarPanelFirma(${sucId})">Borrar</button>
+                                </div>
+                                
+                                <input type="number" id="input-dni-${sucId}" class="input-control-txt" placeholder="Número de DNI de quien recibe" min="0">
+                                <input type="text" id="input-apellido-${sucId}" class="input-control-txt" placeholder="Apellido de quien recibe">
+                                
+                                <button class="btn-entregado-final" onclick="confirmarDespachoFinal(${sucId})">🚚 Confirmar y Registrar Entrega</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Inicializamos los Canvas con un breve retraso para que calculen el ancho real de la pantalla
+                setTimeout(() => { inicializarCanvasFirma(sucId); }, 150);
+            });
+        }
+
+        function toggleSucursalAcordeon(sucId) {
+            let el = document.getElementById(`acordeon-suc-${sucId}`);
+            if (el) el.classList.toggle('abierto');
+        }
+
+        // LÓGICA DE DIBUJO CAPACITIVA PARA DISPOSITIVOS MÓVILES
+        function inicializarCanvasFirma(sucId) {
+            let canvas = document.getElementById(`canvas-suc-${sucId}`);
+            if (!canvas) return;
+            
+            let ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 120;
+            
+            ctx.strokeStyle = "#0f172a"; // Color de la tinta (Slate oscuro)
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = "round";
+            
+            let dibujando = false;
+            canvasActivos[sucId] = { canvas, ctx, vacio: true };
+
+            // Eventos Táctiles Móviles (Dedo)
+            canvas.addEventListener('touchstart', (e) => {
+                dibujando = true;
+                let m = getPosicionToque(e, canvas);
+                ctx.beginPath();
+                ctx.moveTo(m.x, m.y);
+                canvasActivos[sucId].vacio = false;
+                e.preventDefault();
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                if (!dibujando) return;
+                let m = getPosicionToque(e, canvas);
+                ctx.lineTo(m.x, m.y);
+                ctx.stroke();
+                e.preventDefault();
+            });
+            canvas.addEventListener('touchend', () => { dibujando = false; });
+
+            // Eventos de Mouse Común (Computadora)
+            canvas.addEventListener('mousedown', (e) => {
+                dibujando = true;
+                ctx.beginPath();
+                ctx.moveTo(e.offsetX, e.offsetY);
+                canvasActivos[sucId].vacio = false;
+            });
+            canvas.addEventListener('mousemove', (e) => {
+                if (dibujando) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); }
+            });
+            window.addEventListener('mouseup', () => { dibujando = false; });
+        }
+
+        function getPosicionToque(e, canvas) {
+            let rect = canvas.getBoundingClientRect();
+            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+        }
+
+        function limpiarPanelFirma(sucId) {
+            let f = canvasActivos[sucId];
+            if (f) {
+                f.ctx.clearRect(0, 0, f.canvas.width, f.canvas.height);
+                f.vacio = true;
+            }
+        }
+
+        // ENVÍO DE DATOS RESOLUTIVO A LA API
+              // ENVÍO DE DATOS RESOLUTIVO A LA API CON EFECTOS VISUALES
+               // ENVÍO DE DATOS RESOLUTIVO A LA API CON EFECTOS VISUALES TOTALES
+        function confirmarDespachoFinal(sucId) {
+            let dni = document.getElementById(`input-dni-${sucId}`).value;
+            let apellido = document.getElementById(`input-apellido-${sucId}`).value;
+            let firmaObj = canvasActivos[sucId];
+            let botonConfirmar = document.querySelector(`#acordeon-suc-${sucId} .btn-entregado-final`);
+            let tarjetaCompleta = document.getElementById(`acordeon-suc-${sucId}`); // 👈 Buscamos la tarjeta completa
+
+            if (!dni || !apellido || (firmaObj && firmaObj.vacio)) {
+                alert("Error: Por favor, complete la firma, el número de DNI y el Apellido antes de despachar.");
+                return;
+            }
+
+            let imagenFirmaBase64 = firmaObj.canvas.toDataURL("image/png");
+
+            fetch(`${API_URL}?accion=despachar_control_sucursal`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_sucursal: sucId,
+                    dni: dni,
+                    apellido: apellido,
+                    firma: imagenFirmaBase64
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Error de red");
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    
+                    // 🎨 1. CAMBIO DE BOTÓN: Pasa a verde
+                    if (botonConfirmar) {
+                        botonConfirmar.style.backgroundColor = "#16a34a";
+                        botonConfirmar.innerText = "✅ ¡Entregado y Registrado!";
+                    }
+
+                    // 🎨 2. CAMBIO DE TARJETA: ¡Toda la tarjeta pasa a color verde menta!
+                    if (tarjetaCompleta) {
+                        tarjetaCompleta.classList.add('tarjeta-despacho-entregada');
+                    }
+
+                    // 🚚 3. ENCENDEMOS EL TOAST CENTRAL
+                    const toast = document.getElementById('toast-centro-control');
+                    const txtToast = document.getElementById('txt-toast-control-mensaje');
+                    
+                    if (txtToast) {
+                        txtToast.innerText = `¡Pedido de Sucursal ${sucId} despachado y entregado con éxito!`;
+                    }
+                    
+                    if (toast) {
+                        toast.style.opacity = '1';
+                        toast.style.transform = 'translate(-50%, -50%) scale(1)';
+                    }
+
+                    // Esperamos 2 segundos para apreciar el cambio total y refrescamos
+                    setTimeout(() => {
+                        if (toast) toast.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            if (tarjetaCompleta) tarjetaCompleta.classList.remove('abierto');
+                            
+                            setTimeout(() => {
+                                cargarLoteSucursalesSecuencial(); // Limpia la lista
+                            }, 300);
+                        }, 200);
+                    }, 2000);
+
+                } else {
+                    alert("Error en el servidor al intentar registrar la entrega.");
+                }
+            })
+            .catch(() => { alert("Error crítico de comunicación con api.php"); });
+        }
+
+    </script>
+</body>
+</html>

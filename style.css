@@ -1,0 +1,342 @@
+/* ========================================================
+   GLOBALES Y RESETEO DE PANTALLA
+   ======================================================== */
+* { 
+    box-sizing: border-box !important; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+}
+body { 
+    margin: 0; 
+    padding: 108px 6px 20px 6px; 
+    background-color: #f0f2f5; 
+    color: #333; 
+}
+
+/* BARRA SUPERIOR FIJA (TOP BAR) */
+.top-bar {
+    position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+    background: #007bff; color: white; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 12px; z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.top-bar h2 { margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.burger-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+/* CARRUSEL HORIZONTAL DE FILTRO DE MARCAS */
+.marcas-carousel {
+    position: fixed; top: 50px; left: 0; width: 100%; height: 46px;
+    background: #ffffff; border-bottom: 1px solid #e4e6eb; display: flex;
+    align-items: center; padding: 0 8px; gap: 6px; overflow-x: auto; 
+    white-space: nowrap; z-index: 999; scrollbar-width: none; 
+}
+.marcas-carousel::-webkit-scrollbar { display: none; }
+
+.marca-filter-btn {
+    display: inline-block; padding: 5px 12px; font-size: 0.78rem; font-weight: bold;
+    color: #4e5d78; background-color: #f0f2f5; border: 1px solid #dcdfe4;
+    border-radius: 20px; cursor: pointer; transition: all 0.2s ease;
+}
+.marca-filter-btn.active { background-color: #007bff; color: #ffffff; border-color: #007bff; box-shadow: 0 2px 4px rgba(0,123,255,0.2); }
+.marca-filter-btn.completada { background-color: #d1e7dd; color: #0f5132; border-color: #badbcc; }
+.marca-filter-btn.completada.active { background-color: #198754; color: #ffffff; border-color: #198754; box-shadow: 0 2px 4px rgba(25,135,84,0.2); }
+
+/* MENÚ LATERAL DESLIZABLE */
+.sidebar {
+    position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
+    background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.15); z-index: 1002;
+    transition: right 0.3s ease; display: flex; flex-direction: column;
+}
+.sidebar.open { right: 0; }
+.sidebar-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.sidebar-header h3 { margin: 0; font-size: 1rem; }
+.close-btn { background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; }
+.sidebar-content { padding: 15px; flex: 1; overflow-y: auto; }
+
+.menu-btn-vertical { width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 8px; font-weight: bold; font-size: 0.85rem; text-align: left; background: #f8f9fa; cursor: pointer; }
+.menu-btn-vertical.active { background: #e2e8f0; border-color: #4a5568; color: #1a202c; border-left: 4px solid #4a5568; }
+.lista-botones-verticales { display: flex; flex-direction: column; gap: 6px; }
+.suc-btn-v { width: 100%; padding: 12px; font-size: 0.95rem; font-weight: bold; text-align: left; border: 1px solid #ccc; background: #f8f9fa; border-radius: 8px; cursor: pointer; }
+.suc-btn-v.active { background: #007bff; color: white; border-color: #007bff; }
+
+.overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.4); 
+    z-index: 1001; 
+    display: none; 
+    pointer-events: none; /* 👈 Los clics la ignoran por defecto cuando está oculta */
+}
+
+.overlay.active { 
+    display: block; 
+    pointer-events: auto; /* 👈 Solo absorbe los clics cuando el menú está abierto */
+}
+
+/* ========================================================
+   📦 GRILLA DELGADA Y TARJETAS CON BORDE PERIMETRAL
+   ======================================================== */
+.cards-container { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 4px; width: 100%; max-width: 1350px; margin: 0 auto;    
+}
+
+/* Estado Pendiente por defecto (Contorno Azul Celular) */
+.card { 
+    background: white; border-radius: 6px; padding: 3px 8px; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04); 
+    border: 1px solid #007bff; border-left-width: 5px;
+    display: flex; flex-direction: column; gap: 1px;
+}
+
+/* Estado ¡Listo / Armado! (Contorno Verde Celular) */
+.card.preparado { border: 1px solid #28a745; border-left-width: 5px; background-color: #f3fbf5; }
+
+/* Estado Falta en Estante / Buscar (Contorno Rojo Celular) */
+.card.falta { border: 1px solid #dc3545; border-left-width: 5px; background-color: #fff5f5; }
+
+.card-title { font-size: 0.84rem; font-weight: bold; color: #111; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-meta { font-size: 0.68rem; color: #666; margin: 0; padding: 0; }
+
+/* RESTRUCTURACIÓN LINEAL DE STOCKS Y TEXTOS */
+.card-row-data {
+    display: flex; justify-content: space-between; align-items: center; 
+    background-color: #f8f9fa; padding: 1px 5px; border-radius: 4px; margin-top: 0px;
+}
+.inline-stocks-group { display: flex; gap: 3px; align-items: center; }
+.inline-stocks-group .badge { padding: 1px 4px; font-weight: bold; font-size: 0.65rem; border-radius: 3px; text-align: center; }
+.bg-deposito { background-color: #cfe2ff; color: #084298; }
+.bg-sucursal { background-color: #e2d9f3; color: #432874; }
+.bg-optimo { background-color: #e2e8f0; color: #1a202c; border: 1px solid #cbd5e1; }
+
+.unidades-preparar-text { font-size: 0.75rem; color: #444; font-weight: bold; margin: 0; }
+.input-cantidad { width: 42px; padding: 1px; font-size: 0.85rem; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; margin: 0; }
+
+/* BOTONERA EN FILA COMPACTA MOBILE */
+.actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 1px; }
+button.btn-action { width: 100%; padding: 4px 1px; font-size: 0.68rem; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-align: center; margin: 0; }
+.btn-audit { background-color: #fff3cd; color: #664d03; }
+.btn-audit.active { background-color: #ffc107; color: black; }
+.btn-missing { background-color: #f8d7da; color: #842029; }
+.btn-missing.active { background-color: #dc3545; color: white; }
+.btn-ready { background-color: #d1e7dd; color: #0f5132; }
+.btn-ready.active { background-color: #28a745; color: white; }
+.btn-scan { background-color: #e2e8f0; color: #333; border: 1px solid #ccc; }
+.btn-opt-edit { background-color: #e2e8f0; color: #333; border: 1px solid #cbd5e1; }
+
+/* ========================================================
+   💻 VISTA INDUSTRIAL RECTA ADAPTADA PARA COMPUTADORAS
+   ======================================================== */
+@media (min-width: 768px) {
+    body { padding-bottom: 25px !important; }
+    .cards-container { display: flex; flex-direction: column; gap: 2px; }
+    .card { flex-direction: row; align-items: center; justify-content: space-between; padding: 2px 12px; border: 1px solid #007bff; border-left-width: 5px; border-radius: 4px; gap: 15px; }
+    .card.preparado { border: 1px solid #28a745; border-left-width: 5px; }
+    .card.falta { border: 1px solid #dc3545; border-left-width: 5px; }
+    .card-title { width: 250px; text-align: left; font-size: 0.85rem; margin: 0; }
+    .card-meta { width: 140px; text-align: left; margin: 0; }
+    .card-row-data { flex: 1; background: transparent; padding: 0; justify-content: space-around; gap: 10px; margin: 0; }
+    .actions-grid { width: 320px; margin: 0; display: flex; gap: 4px; }
+    button.btn-action { padding: 5px 4px; font-size: 0.72rem; }
+    .bottom-bar { max-width: 500px !important; left: 50% !important; transform: translateX(-50%) !important; bottom: 10px !important; border-radius: 30px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important; }
+}
+
+/* ========================================================
+   📲 BARRA DE HERRAMIENTAS INFERIOR FIXED (SELECT + BOTÓN)
+   ======================================================== */
+/* ========================================================
+   📲 BARRA DE HERRAMIENTAS INFERIOR FIXED (SELECT + BOTÓN)
+   ======================================================== */
+.bottom-bar {
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 52px;
+    background: #ffffff; 
+    border-top: 1px solid #e4e6eb; 
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 0 10px; 
+    gap: 10px; 
+    z-index: 1000;
+}
+body { padding-bottom: 70px !important; }
+
+.select-filter-bottom { 
+    flex: 1; 
+    padding: 8px; 
+    font-size: 0.85rem;
+    font-weight: bold;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    color: #1e293b;
+    height: 38px;
+}
+
+.btn-acciones-inferior {
+    padding: 0 16px;
+    height: 38px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    background-color: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* MODALES EMERGENTES COMPARTIDOS */
+.modal-overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 4000; display: flex; align-items: center; justify-content: center; padding: 15px; }
+.modal-motivos-card { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: popScale 0.2s ease-out; }
+.modal-motivos-card h4 { margin-top: 0; color: #222; font-size: 1.05rem; margin-bottom: 15px; }
+.btn-motivo-select { width: 100%; padding: 12px; margin-bottom: 8px; font-size: 0.9rem; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #f8f9fa; color: #333; cursor: pointer; }
+.btn-motivo-select:hover { background-color: #e2e8f0; }
+.btn-modal-cancel { width: 100%; padding: 8px; background: none; border: none; color: #666; font-size: 0.85rem; font-weight: 500; cursor: pointer; margin-top: 5px; }
+@keyframes popScale { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* CARTELES TOAST FLOTANTES SUPERIORES */
+.toast-popup { position: fixed; top: 65px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 30px; color: white; font-weight: bold; font-size: 0.78rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 5000; cursor: pointer; text-align: center; white-space: nowrap; animation: slideDown 0.2s ease-out; }
+.toast-popup.success { background-color: #198754; }
+.toast-popup.danger { background-color: #dc3545; }
+.toast-popup.warning { background-color: #ffc107; color: #000; }
+@keyframes slideDown { from { top: 35px; opacity: 0; } to { top: 65px; opacity: 1; } }
+
+/* CAMARA SCANNER */
+.scanner-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 10px; }
+.scanner-card { background: white; padding: 15px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; }
+.btn-cancel-scan { margin-top: 10px; padding: 10px; width: 100%; background: #dc3545; color: white; border: none; border-radius: 6px; font-weight: bold; }
+/* Agregá esto al final de tu style.css para ordenar la barra inferior */
+.btn-acciones-inferior {
+    flex: 1;
+    height: 38px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+.btn-acciones-inferior:hover {
+    background-color: #218838;
+}
+
+/* Contenedor Base de la Tarjeta */
+.tarjeta-producto-deposito {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Bordes laterales de estado según las acciones seleccionadas */
+.tarjeta-producto-deposito.estado-preparado {
+    border-left: 5px solid #22c55e !important;
+}
+.tarjeta-producto-deposito.estado-falta {
+    border-left: 5px solid #ef4444 !important;
+}
+
+/* Sección de Títulos y Textos Secundarios */
+.tarjeta-encabezado h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+.tarjeta-encabezado small {
+    display: block;
+    color: #64748b;
+    font-size: 0.7rem;
+    margin-top: 2px;
+}
+
+/* Fila de Datos de Stocks y Cantidades */
+.tarjeta-datos-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+/* Etiquetas Compactas de Depósito, Sucursal y Óptimo */
+.tags-stock-grupo {
+    display: flex;
+    gap: 4px;
+}
+.tag-stock {
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+.tag-stock.dep { background-color: #eff6ff; color: #1d4ed8; }
+.tag-stock.suc { background-color: #f0fdf4; color: #15803d; }
+.tag-stock.opt { background-color: #fff7ed; color: #c2410c; }
+
+/* Visualizador de la cantidad a preparar (Derecha) */
+.cantidad-preparar-caja {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.txt-preparar {
+    font-size: 0.75rem;
+    color: #334155;
+}
+.num-preparar {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #0f172a;
+    min-width: 24px;
+    text-align: right;
+}
+
+/* Botonera Inferior en Cuadrícula */
+.tarjeta-botones-actions, .tarjeta-botones-acciones {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+}
+
+/* Estilo Común de Botones de Acción */
+.btn-accion-tarjeta {
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 5px 0;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+.btn-accion-tarjeta:active {
+    transform: scale(0.96);
+}
+
+/* Variaciones de estados activos según el botón */
+.btn-accion-tarjeta.audit.active { background-color: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+.btn-accion-tarjeta.buscar.active { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.btn-accion-tarjeta.preparado.active { background-color: #dcfce7; color: #15803d; border-color: #86efac; }
+.btn-accion-tarjeta.scan { background-color: #f1f5f9; color: #1e293b; }

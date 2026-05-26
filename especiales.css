@@ -1,0 +1,112 @@
+/* ========================================================
+   RESET Y CONFIGURACIÓN RESPONSIVE PREMIUM
+   ======================================================== */
+* {
+    box-sizing: border-box !important;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+body {
+    padding: 65px 10px 70px 10px; /* Colchón para que las barras fijas no tapen el contenido */
+    background-color: #f4f6f9;
+    color: #333;
+}
+
+/* BARRA SUPERIOR PLANA */
+.top-bar-especial {
+    position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+    background: #4a5568; color: white; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 15px; z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.top-bar-especial h2 { margin: 0; font-size: 0.95rem; font-weight: bold; }
+
+/* RECTIFICADO: Botón volver alineado horizontalmente y legible */
+.btn-volver {
+    color: #e2e8f0; text-decoration: none; font-size: 0.85rem; font-weight: bold;
+    background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 4px;
+    display: inline-block;
+}
+.btn-volver:hover { background: rgba(255,255,255,0.25); }
+.sucursal-header-badge { background: #cbd5e1; color: #1e293b; padding: 4px 8px; font-weight: bold; font-size: 0.75rem; border-radius: 4px; }
+
+/* CONTENEDOR PRINCIPAL */
+.main-container-especial {
+    max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;
+}
+
+/* SECCIÓN DE BÚSQUEDA PREDICTIVA */
+.search-section {
+    background: white; padding: 12px; border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05); position: relative;
+    margin-top: 5px;
+}
+.label-especial { display: block; font-size: 0.78rem; font-weight: bold; color: #4a5568; margin-bottom: 6px; }
+.search-box-row { display: flex; gap: 6px; width: 100%; }
+
+#input-busqueda-pred { flex: 2; padding: 8px; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 5px; outline: none; }
+#input-busqueda-pred:focus { border-color: #4a5568; }
+#input-cantidad-especial { width: 65px; padding: 8px; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 5px; text-align: center; font-weight: bold; }
+#btn-agregar-lista { padding: 8px 16px; background-color: #4a5568; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
+#btn-agregar-lista:hover { background-color: #2d3748; }
+
+/* PANEL DE SUGERENCIAS FLOTANTES (AUTOCOMPLETE DE FONDO) */
+.autocomplete-suggestions {
+    position: absolute; top: 100%; left: 12px; right: 12px;
+    background: white; border: 1px solid #cbd5e1; border-radius: 0 0 6px 6px;
+    max-height: 200px; overflow-y: auto; z-index: 2000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.suggestion-item { padding: 10px; font-size: 0.85rem; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background-color: #f8fafc; }
+.suggestion-meta { color: #64748b; font-size: 0.72rem; }
+/* SECCIÓN LISTADO */
+.list-section { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.section-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+.section-title-row h3 { margin: 0; font-size: 0.9rem; color: #1e293b; }
+.counter-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; font-size: 0.72rem; font-weight: bold; border-radius: 10px; }
+
+/* FILAS DEL LISTADO (FORMATO COMPACTO PARA PANTALLAS DE CELULAR) */
+.table-responsive-container { display: flex; flex-direction: column; gap: 5px; }
+.row-item-especial {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #4a5568;
+    padding: 6px 10px; border-radius: 5px; display: flex; flex-direction: column; gap: 4px;
+}
+
+/* 🚨 REALCE ROJO DE COMBINACIÓN: Si el ítem ya coincide con el pedido diario general */
+.row-item-especial.cruzado-sistema {
+    border-color: #ef4444; border-left-color: #ef4444; background-color: #fef2f2;
+}
+
+.item-title { font-size: 0.84rem; font-weight: bold; color: #1e293b; }
+.item-meta { font-size: 0.68rem; color: #64748b; }
+.item-qty-zone { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 3px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.78rem; }
+.btn-delete-row { background: none; border: none; color: #ef4444; font-size: 0.85rem; font-weight: bold; cursor: pointer; padding: 0 5px; }
+
+/* ========================================================
+   💻 MESA INDUSTRIAL: ADAPTACIÓN DIRECTA PARA MONITORES DE PC
+   ======================================================== */
+@media (min-width: 768px) {
+    body { padding-bottom: 20px !important; }
+    .row-item-especial {
+        flex-direction: row; align-items: center; justify-content: space-between; padding: 4px 12px; gap: 15px;
+    }
+    .item-title { width: 350px; text-align: left; }
+    .item-meta { width: 200px; text-align: left; }
+    .item-qty-zone { width: 150px; border: none; background: transparent; padding: 0; justify-content: flex-end; gap: 10px; }
+    .bottom-bar-especial { max-width: 500px !important; left: 50% !important; transform: translateX(-50%) !important; bottom: 10px !important; border-radius: 30px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important; }
+}
+
+/* BARRA DE ACCIONES MAESTRA FIJA ABAJO */
+.bottom-bar-especial {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 52px;
+    background: #ffffff; border-top: 1px solid #e4e6eb; display: flex;
+    justify-content: space-between; align-items: center; padding: 0 10px; gap: 10px; z-index: 1000;
+}
+.btn-clear-all { flex: 1; padding: 10px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; }
+.btn-clear-all:hover { background: #f1f5f9; }
+.btn-save-especial { flex: 2; padding: 10px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; border: none; background-color: #2563eb; color: white; cursor: pointer; }
+.btn-save-especial:hover { background-color: #1d4ed8; }

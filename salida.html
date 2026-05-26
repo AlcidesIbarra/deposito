@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salida de Mercadería</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 70px 6px 20px 6px !important; }
+        .salida-container { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+        .remito-acordeon { background: white; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.25s ease-in-out; }
+        
+        /* Estado estético inicial de la tarjeta en Rojo Salida */
+        .remito-acordeon.borde-salida-rojo { border-left: 5px solid #ef4444 !important; }
+        /* Estado estético finalizado cuando se guarde el control parcial o total */
+        .remito-acordeon.borde-salida-verde { border-left: 5px solid #22c55e !important; background-color: #f0fdf4; }
+        .remito-acordeon.borde-salida-verde .remito-cabecera { background-color: #22c55e !important; }
+        .remito-acordeon.borde-salida-verde .remito-contenido { background-color: #f0fdf4 !important; }
+
+        .remito-cabecera { padding: 14px; background-color: #ef4444; color: white; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        .remito-cabecera::after { content: '▼'; font-size: 0.75rem; transition: transform 0.2s; }
+        .remito-acordeon.abierto .remito-cabecera::after { transform: rotate(180deg); }
+        .remito-contenido { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding: 0 14px; background: #fff; }
+        .remito-acordeon.abierto .remito-contenido { max-height: 2000px; padding: 15px 14px; }
+        
+        .fila-producto-check { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #e2e8f0; }
+        .info-producto-txt { display: flex; flex-direction: column; gap: 2px; width: 80%; }
+        .info-producto-txt span { font-size: 0.85rem; color: #1e293b; font-weight: 500; }
+        .info-producto-txt small { font-size: 0.72rem; color: #64748b; }
+        
+        /* Checkbox premium de control industrial */
+        .checkbox-salida { width: 22px; height: 22px; cursor: pointer; accent-color: #ef4444; }
+        .tarjeta-despacho-entregada .checkbox-salida, .remito-acordeon.borde-salida-verde .checkbox-salida { accent-color: #22c55e; }
+
+        .btn-guardar-salida { width: 100%; height: 42px; background-color: #ef4444; color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: background-color 0.25s ease; }
+        .btn-regresar-mesa { display: inline-block; width: 100%; height: 38px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: bold; border-radius: 6px; line-height: 36px; text-align: center; text-decoration: none; font-size: 0.85rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <header class="top-bar" style="background-color: #ef4444;">
+        <h2>🚪 Control y Salida de Mercadería</h2>
+        <a href="index.html" style="color:white; text-decoration:none; font-size:1.2rem;">✕</a>
+    </header>
+
+    <main class="salida-container" id="box-remitos-listado">
+        <!-- Las tarjetas de remitos y productos se inyectarán de forma dinámica aquí -->
+    </main>
+
+    <div style="padding: 0 10px;">
+        <a href="index.html" class="btn-regresar-mesa">Volver a la Mesa de Carga</a>
+    </div>
+
+    <!-- 🔔 TOAST DE CONFIRMACIÓN FLOTANTE CENTRAL PREMIUM -->
+    <div id="toast-centro-salida" style="
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        background-color: #1e293b; color: #ffffff; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center; width: 85%; max-width: 320px;
+    ">
+        <span style="font-size: 2.2rem;">🚪</span>
+        <span id="txt-toast-salida-mensaje" style="font-size: 0.95rem; font-weight: bold; line-height: 1.4;">¡Control de salida guardado con éxito!</span>
+    </div>
+    <!-- 3. LÓGICA DE CONTROL, DESPLIEGUE DINÁMICO Y ENVÍO A MYSQL -->
+    <script>
+        const API_URL = 'http://localhost:50/deposito/api.php';
+        let remitosAgrupadosGlobal = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarLoteRemitosSalida();
+        });
+
+        // Agrupa de forma secuencial todos los pedidos de las sucursales activos para controlar
+        async function cargarLoteRemitosSalida() {
+            let contenedor = document.getElementById('box-remitos-listado');
+            contenedor.innerHTML = '<p style="text-align:center; color:#666; font-size:0.85rem; padding: 20px;">Buscando remitos cargados en sistema...</p>';
+            
+            remitosAgrupadosGlobal = {};
+            
+            // Consultamos consecutivamente las 7 sucursales del sistema
+            for (let s = 1; s <= 7; s++) {
+                try {
+                    let res = await fetch(`${API_URL}?accion=listar_pedidos&sucursal=${s}&id_pedido_sistema=1001`);
+                    if(!res.ok) continue;
+                    let pedidos = await res.json();
+                    
+                    // Procesamos cada ítem del remito
+                    pedidos.forEach(p => {
+                        let claveUnica = `${p.id_pedido_sistema}-SUC${s}`;
+                        
+                        if (!remitosAgrupadosGlobal[claveUnica]) {
+                            remitosAgrupadosGlobal[claveUnica] = {
+                                id_pedido_sistema: p.id_pedido_sistema,
+                                sucursal_id: s,
+                                productos: []
+                            };
+                        }
+                        remitosAgrupadosGlobal[claveUnica].productos.push(p);
+                    });
+                } catch(e) {}
+            }
+            
+            renderizarAcordeonesSalida();
+        }
+
+        function renderizarAcordeonesSalida() {
+            let contenedor = document.getElementById('box-remitos-listado');
+            contenedor.innerHTML = '';
+            
+            let clavesRemitos = Object.keys(remitosAgrupadosGlobal);
+            
+            if (clavesRemitos.length === 0) {
+                contenedor.innerHTML = '<p style="text-align:center; padding:40px; color:#64748b; font-size:0.85rem;">No hay cargas cargadas hoy para controlar la salida.</p>';
+                return;
+            }
+
+            clavesRemitos.forEach(clave => {
+                let remitoData = remitosAgrupadosGlobal[clave];
+                let prods = remitoData.productos;
+                
+                // Verificamos si todos los productos individuales de este remito ya tienen tilde de salida en MySQL
+                let todoVerificadoSalida = prods.every(p => parseInt(p.control_salida || 0) === 1);
+                let claseColorInicial = todoVerificadoSalida ? 'borde-salida-verde' : 'borde-salida-rojo';
+
+                let filasHtml = '';
+                prods.forEach(p => {
+                    let estaChecked = parseInt(p.control_salida || 0) === 1 ? 'checked' : '';
+                    filasHtml += `
+                        <div class="fila-producto-check">
+                            <div class="info-producto-txt">
+                                <span><strong>[${p.marca || 'S/M'}]</strong> ${p.nombre}</span>
+                                <small>CB: ${p.codigo_barras} | Cantidad a enviar: <strong>${p.cantidad}</strong></small>
+                            </div>
+                            <input type="checkbox" 
+                                   class="checkbox-salida" 
+                                   data-item-id="${p.id}" 
+                                   ${estaChecked}>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML += `
+                    <div class="remito-acordeon ${claseColorInicial}" id="acordeon-remito-${clave}">
+                        <div class="remito-cabecera" onclick="toggleRemitoAcordeon('${clave}')">
+                            <span>📄 REMITO #${remitoData.id_pedido_sistema} ➔ SUCURSAL ${remitoData.sucursal_id}</span>
+                        </div>
+                        <div class="remito-contenido">
+                            <p style="font-size:0.78rem; font-weight:bold; color:#64748b; margin-bottom:10px; border-bottom:1px dashed #cbd5e1; padding-bottom:5px;">📋 VERIFICACIÓN DE ARTÍCULOS</p>
+                            
+                            <div class="lista-items-checkboxes">
+                                ${filasHtml}
+                            </div>
+                            
+                            <button class="btn-guardar-salida" onclick="procesarGuardadoSalida('${clave}', '${remitoData.id_pedido_sistema}', ${remitoData.sucursal_id})">
+                                💾 Registrar Check de Salida
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleRemitoAcordeon(clave) {
+            let el = document.getElementById(`acordeon-remito-${clave}`);
+            if (el) el.classList.toggle('abierto');
+        }
+
+        // PERSISTENCIA Y EFECTOS TRANSICIONALES DE COLOR
+        function procesarGuardadoSalida(clave, idRemitoSistema, sucursalId) {
+            let contenedorTarjeta = document.getElementById(`acordeon-remito-${clave}`);
+            let botonGuardar = document.querySelector(`#acordeon-remito-${clave} .btn-guardar-salida`);
+            
+            // Seleccionamos todos los checkboxes dentro de este acordeón específico
+            let checkboxes = document.querySelectorAll(`#acordeon-remito-${clave} .checkbox-salida`);
+            let itemsMarcados = [];
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    itemsMarcados.push(parseInt(cb.getAttribute('data-item-id')));
+                }
+            });
+
+            // Conectamos mediante POST al endpoint configurado en tu api.php
+            fetch(`${API_URL}?accion=guardar_control_salida`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_pedido_sistema: idRemitoSistema,
+                    sucursal_id: sucursalId,
+                    items_marcados: itemsMarcados
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Error de red");
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    
+                    // 🎨 1. CAMBIOS ESTÉTICOS SIMULTÁNEOS: El botón y la tarjeta pasan a VERDE
+                    if (botonGuardar) {
+                        botonGuardar.style.backgroundColor = "#22c55e";
+                        botonGuardar.innerText = "✅ Salida Guardada";
+                    }
+                    if (contenedorTarjeta) {
+                        contenedorTarjeta.classList.remove('borde-salida-rojo');
+                        contenedorTarjeta.classList.add('borde-salida-verde');
+                    }
+
+                    // 🚪 2. DISPARAMOS EL TOAST PREMIUM EN EL CENTRO DE LA PANTALLA
+                    const toast = document.getElementById('toast-centro-salida');
+                    const txtToast = document.getElementById('txt-toast-salida-mensaje');
+                    if (txtToast) {
+                        txtToast.innerText = `¡Control de salida para Remito #${idRemitoSistema} guardado con éxito!`;
+                    }
+                    if (toast) {
+                        toast.style.opacity = '1';
+                        toast.style.transform = 'translate(-50%, -50%) scale(1)';
+                    }
+
+                    // Esperamos 2 segundos en pantalla para apreciar la confirmación limpia y cerramos
+                    setTimeout(() => {
+                        if (toast) toast.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            if (contenedorTarjeta) contenedorTarjeta.classList.remove('abierto');
+                            
+                            setTimeout(() => {
+                                cargarLoteRemitosSalida(); // Refresca los estados reales mapeados desde MySQL
+                            }, 300);
+                        }, 200);
+                    }, 2000);
+
+                } else {
+                    alert("Error en el servidor al procesar el guardado de salida.");
+                }
+            })
+            .catch(() => { alert("Error crítico de comunicación con api.php"); });
+        }
+    </script>
+</body>
+</html>

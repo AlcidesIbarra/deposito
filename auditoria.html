@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Pedido</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Ajuste de espacio para que entren la barra superior y el carrusel juntos */
+        body {
+            padding: 108px 6px 20px 6px !important;
+        }
+        
+        .auditoria-container { 
+            padding: 15px; 
+            margin-top: 10px; 
+            margin-bottom: 80px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+
+        /* 👑 CONTENEDOR COLAPSABLE PROFESIONAL (ACORDEÓN) */
+        .tarjeta-acordeon-auditoria {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            overflow: hidden;
+            transition: all 0.25s ease-in-out;
+        }
+
+        /* Encabezado cliqueable de la tarjeta */
+        .acordeon-cabecera {
+            padding: 12px 14px;
+            cursor: pointer;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            position: relative;
+            user-select: none;
+            transition: background-color 0.15s ease;
+        }
+        .acordeon-cabecera:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Flecha indicadora de apertura (Animada) */
+        .acordeon-cabecera::after {
+            content: '▼';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: transform 0.25s ease;
+        }
+        .tarjeta-acordeon-auditoria.abierto .acordeon-cabecera::after {
+            transform: translateY(-50%) rotate(180deg);
+            color: #2563eb;
+        }
+
+        /* Cuerpo oculto que guarda los controles (Animado) */
+        .acordeon-contenido {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            background-color: #ffffff;
+            border-top: 0 solid #e2e8f0;
+            padding: 0 14px;
+        }
+        
+        /* Cuando se añade la clase .abierto se despliega el panel */
+        .tarjeta-acordeon-auditoria.abierto .acordeon-contenido {
+            max-height: 1000px;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-top-width: 1px;
+            padding: 15px 14px;
+        }
+
+        /* Detalles estéticos del panel de control interno */
+        .titulo-seccion-aud { font-size: 0.82rem; font-weight: bold; color: #475569; margin: 0 0 12px 0; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; }
+        .fila-input-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .label-control { font-size: 0.8rem; font-weight: bold; color: #334155; }
+        .input-aud-num { width: 60px; height: 28px; font-size: 0.9rem; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; border-radius: 4px; }
+        
+        /* Botonera inferior */
+        .btn-guardar-aud { width: 100%; height: 42px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+        .btn-cancelar-aud { width: 100%; height: 38px; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-align: center; margin-top: 5px; }
+  
+  /* ========================================================
+   🎨 CONTORNOS FLUIDOS PARA LA TARJETA DE AUDITORÍA
+   ======================================================== */
+
+/* Estado Pendiente: Borde completo naranja con lateral de 5px (Igual a tu imagen) */
+.tarjeta-acordeon-auditoria.borde-auditoria-naranja {
+    border: 1px solid #f97316 !important; 
+    border-left: 5px solid #f97316 !important; 
+    border-radius: 6px !important;
+}
+
+/* Estado Finalizado: Cambia automáticamente a verde al registrar el guardado */
+.tarjeta-acordeon-auditoria.borde-auditoria-verde {
+    border: 1px solid #22c55e !important; 
+    border-left: 5px solid #22c55e !important; 
+    border-radius: 6px !important;
+    background-color: #f3fbf5 !important; /* Fondo menta limpio idéntico al index */
+}
+
+  </style>
+</head>
+<body>
+
+    <!-- 1. BARRA SUPERIOR AZUL FIJA -->
+    <header class="top-bar">
+        <h2 id="auditoria-titulo-barra">📋 Panel de Auditoría</h2>
+        <button class="burger-btn" onclick="volverMesaTrabajo()">✕</button>
+    </header>
+
+    <!-- 2. BARRA HORIZONTAL DE FILTRO DE MARCAS (CARRUSEL REQUERIDO) -->
+    <div id="bar-marcas" class="marcas-carousel"></div>
+       <!-- 3. CONTENEDOR DE TRABAJO PRINCIPAL MODIFICADO -->
+    <main class="auditoria-container">
+        
+        <!-- COMPONENTE INTEGRADO ACORDEÓN (Tarjeta + Controles) -->
+            <!-- COMPONENTE INTEGRADO ACORDEÓN (Tarjeta + Controles) -->
+        <div id="item-acordeon-contenedor" class="tarjeta-acordeon-auditoria borde-auditoria-naranja">
+            
+            <!-- La cabecera maneja el despliegue del acordeón -->
+            <div class="acordeon-cabecera" onclick="toggleDesplegarAcordeon()">
+                <h4 class="card-title" id="lbl-marca-nombre"><strong>[Cargando]</strong> Producto...</h4>
+                <p class="card-meta" id="lbl-codigos">Cod: ... | CB: ...</p>
+                
+                <div class="card-row-data" style="margin-top: 5px; background-color: #f8fafc;" onclick="event.stopPropagation()">
+                    <div class="inline-stocks-group">
+                 
+                        <span class="badge bg-sucursal">SUC: 5</span>
+                       
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="unidades-preparar-text">Esperado:</span>
+                        <span id="lbl-cantidad" class="input-cantidad" style="display:inline-block; line-height:22px; background:#fff; border-color:#cbd5e1;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔐 CORRECCIÓN AQUÍ: Agregamos onclick para aislar los inputs del teclado -->
+            <div class="acordeon-contenido" onclick="event.stopPropagation()">
+                <h4 class="titulo-seccion-aud">⚙️ CONTROL DE CANTIDADES RECIBIDAS</h4>
+                
+                <div class="fila-input-control">
+                    <span class="label-control">📦 Total Unidades Contadas:</span>
+                    <!-- Añadimos onfocus para limpiar el valor al tocar el recuadro en el celular -->
+                    <input type="number" id="aud-conformes" class="input-aud-num" value="0" min="0" onfocus="this.select()">
+                </div>
+
+                <div class="fila-input-control" style="flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 15px;">
+                    <span class="label-control">📝 Observaciones de la Auditoría:</span>
+                    <textarea id="aud-observaciones" style="width: 100%; height: 60px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; font-size: 0.8rem; resize: none;" placeholder="Ej: Mercadería en perfecto estado..."></textarea>
+               <div class="btn-guardar-aud" 
+     onclick="procesarGuardadoAuditoria(event)" 
+     style="display: flex; align-items: center; justify-content: center; background-color: #28a745; color: white; border-radius: 6px; height: 42px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 10px; user-select: none;">
+    💾 Finalizar Auditoría
+</div>
+        </div>
+
+
+        <button class="btn-cancelar-aud" onclick="volverMesaTrabajo()">Volver a la Mesa de Carga</button>
+    </main>
+
+
+    <!-- 4. TOAST DE CONFIRMACIÓN FLOTANTE PREMIUM -->
+    <div id="toast-centro-auditoria" style="
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        background-color: #1e293b; color: #ffffff; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center; width: 85%; max-width:         320px;
+    ">
+        <span style="font-size: 2.2rem;">✅</span>
+        <span style="font-size: 0.95rem; font-weight: bold; line-height: 1.4;">¡Auditoría registrada e inyectada con éxito!</span>
+    </div>
+
+    <!-- 5. 🛠️ LÓGICA DE CONTROL DE DATOS Y ASIGNACIÓN DE COLORES -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const idPedido = urlParams.get('id');
+        const rolActivo = urlParams.get('rol');
+        const remitoPadre = urlParams.get('remito');
+        const sucursalPadre = urlParams.get('sucursal');
+        const marcaProducto = urlParams.get('marca') || 'Sin Marca';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!idPedido) {
+                alert("Error: No se especificó ningún ítem para auditar.");
+                volverMesaTrabajo();
+                return;
+            }
+
+            document.getElementById('auditoria-titulo-barra').innerText = `📋 Auditando Pedido #${remitoPadre}`;
+            
+            // Inyectamos la burbuja de la marca en la barra horizontal superior
+            const contenedorMarcas = document.getElementById('bar-marcas');
+            if (contenedorMarcas) {
+                contenedorMarcas.innerHTML = `
+                    <button class="marca-filter-btn active" style="cursor: default;">
+                        ${marcaProducto.toUpperCase()}
+                    </button>
+                `;
+            }
+
+            // 🎨 ASIGNACIÓN DE COLORES SIN ERRORES:
+            const audSuc = parseInt(urlParams.get('aud_suc')) || 0;
+            const audDep = parseInt(urlParams.get('aud_dep')) || 0;
+            const yaAuditado = (rolActivo === 'sucursal') ? (audSuc === 1) : (audDep === 1);
+
+            const acContenedor = document.getElementById('item-acordeon-contenedor');
+            if (acContenedor) {
+                if (yaAuditado) {
+                    acContenedor.className = "tarjeta-acordeon-auditoria borde-auditoria-verde";
+                } else {
+                    acContenedor.className = "tarjeta-acordeon-auditoria borde-auditoria-naranja";
+                }
+            }
+
+            // Cargamos los datos del artículo en la cabecera de la tarjeta
+            document.getElementById('lbl-marca-nombre').innerHTML = `<strong>[${marcaProducto}]</strong> ${urlParams.get('nombre')}`;
+            document.getElementById('lbl-codigos').innerText = `${urlParams.get('codigo')} | CB: ${urlParams.get('cb')}`;
+            document.getElementById('lbl-cantidad').innerText = urlParams.get('cantidad');
+
+            document.getElementById('aud-conformes').value = urlParams.get('cantidad');
+        });
+
+        function toggleDesplegarAcordeon() {
+            const acordeon = document.getElementById('item-acordeon-contenedor');
+            if (acordeon) {
+                acordeon.classList.toggle('abierto');
+            }
+        }
+
+        function volverMesaTrabajo() {
+            window.location.href = `index.html`;
+        }
+
+  function procesarGuardadoAuditoria(e) {
+    // 1. Frenamos cualquier propagación o recarga del navegador en dispositivos móviles
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // 2. Capturamos el nodo del DOM y extraemos el número escrito por el operario
+    const inputElemento = document.getElementById('aud-conformes');
+    if (!inputElemento) {
+        alert("Error de sistema: No se encontró el casillero numérico en el HTML.");
+        return;
+    }
+
+    const unidadesContadas = parseInt(inputElemento.value, 10);
+    const obs = document.getElementById('aud-observaciones').value;
+
+    // Mensaje de diagnóstico rápido en la consola F12
+    console.log("[AUDITORÍA CONTADA REAL]:", unidadesContadas);
+
+    const urlApi = 'http://localhost:50/deposito/api.php?accion=solicitar_auditoria';
+
+    fetch(urlApi, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id_pedido: parseInt(idPedido, 10),
+            tipo: rolActivo,
+            valor: 1,
+            cantidad_contada: unidadesContadas, // Enviamos el número limpio extraído
+            comentarios: obs
+        })
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Error en respuesta de red");
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Transiciones visuales a verde de confirmación limpia
+            const acContenedor = document.getElementById('item-acordeon-contenedor');
+            if (acContenedor) {
+                acContenedor.className = "tarjeta-acordeon-auditoria borde-auditoria-verde";
+            }
+
+            const botonMarca = document.querySelector('#bar-marcas .marca-filter-btn');
+            if (botonMarca) {
+                botonMarca.classList.add('completada');
+            }
+
+            // Encendemos el Toast centrado elástico en medio del celular
+            const toast = document.getElementById('toast-centro-auditoria');
+            if (toast) {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, -50%) scale(1)';
+            }
+
+            // Esperamos 2 segundos para congelar la vista y regresamos
+            setTimeout(() => {
+                if (toast) toast.style.opacity = '0';
+                setTimeout(() => {
+                    volverMesaTrabajo(); // Regresa al index.html
+                }, 200);
+            }, 2000);
+        } else {
+            alert("Error: El servidor rechazó la operación de guardado.");
+        }
+    })
+    .catch(err => {
+        console.error("Falla crítica en el envío del fetch:", err);
+        alert("Falla de comunicación con api.php. Asegúrate de que XAMPP esté encendido.");
+    });
+}
+
+
+    </script>
+</body>
+</html>

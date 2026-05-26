@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Depósito y Pedidos</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 📷 Librería local para el escaneo de códigos de barra por cámara -->
+    <script src="html5-qrcode.min.js"></script>
+</head>
+<body>
+
+    <!-- 1. BARRA SUPERIOR AZUL FIJA (TOP BAR) -->
+    <header class="top-bar">
+        <h2 id="titulo-pagina">Gestión</h2>
+        <button id="btn-burger" class="burger-btn">☰</button>
+    </header>
+
+    <!-- 2. BARRA HORIZONTAL DE FILTRO DE MARCAS (CARRUSEL) -->
+    <div id="bar-marcas" class="marcas-carousel"></div>
+
+    <!-- 3. MENÚ LATERAL DESLIZABLE (PANEL DE HAMBURGUESA) -->
+    <div id="sidebar-menu" class="sidebar">
+        <div class="sidebar-header">
+            <h3>⚙️ Panel de Testeo</h3>
+            <button id="btn-close-sidebar" class="close-btn">✕</button>
+        </div>
+        <div class="sidebar-content">
+            <label>1. ELEGIR VISTA (ROL)</label>
+            <button id="btn-rol-deposito" class="menu-btn-vertical active" onclick="testearCambioRol('deposito')">Vista Depósito / Armado</button>
+            <button id="btn-rol-sucursal" class="menu-btn-vertical" onclick="testearCambioRol('sucursal')">Vista Sucursal / Cantidades</button>
+
+            <!-- 🛒 ACCESO DIRECTO AL MÓDULO INDEPENDIENTE DE PEDIDOS ESPECIALES -->
+            <label>⭐ ACCIONES DE SUCURSAL</label>
+            <a href="especiales.html" style="display:block; text-decoration:none; text-align:center; padding:10px; background-color:#2563eb; color:white; font-weight:bold; font-size:0.85rem; border-radius:6px; margin-bottom:15px;">🛒 Crear Pedido Especial</a>
+
+            <label>2. ELEGIR SUCURSAL DESTINO</label>
+            <div class="lista-botones-verticales">
+                <button class="suc-btn-v active" onclick="testearCambioSucursal(1)">Sucursal 1</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(2)">Sucursal 2</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(3)">Sucursal 3</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(4)">Sucursal 4</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(5)">Sucursal 5</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(6)">Sucursal 6</button>
+                <button class="suc-btn-v" onclick="testearCambioSucursal(7)">Sucursal 7</button>
+                <button class="menu-btn-vertical" style="background-color: #ffc107; color: #000; border-color: #ffc107; text-align: center; margin-bottom: 15px;" onclick="irAAuditoriaDesdeMenu()">
+                🔍 Auditar
+            </button>        
+
+               <a href="control.html" style="display:block; text-decoration:none; text-align:center; padding:12px; background-color:#0f172a; color:white; font-weight:bold; font-size:0.85rem; border-radius:8px; margin-bottom:15px;">
+                🚚 Control y Despacho
+            </a>
+            <a href="salida.html" style="display:block; text-decoration:none; text-align:center; padding:12px; background-color:#ef4444; color:white; font-weight:bold; font-size:0.85rem; border-radius:8px; margin-bottom:15px;">
+                🚪 Salida de Mercadería
+            </a>
+
+            </div>
+        </div>
+    </div>
+
+       <!-- 4. 📷 VISOR FLOTANTE DE LA CÁMARA -->
+    <div id="scanner-modal" class="scanner-container" style="display: none;">
+        <div class="scanner-card">
+            <h4>Escaneando Código de Barras</h4>
+            <div id="reader" style="width: 100%;"></div>
+            <!-- Corregido o verificado: llama a cerrarEscaner() -->
+            <button onclick="cerrarEscaner()" class="btn-cancel-scan">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- 5. 🚨 POP-UP FLOTANTE DE ERROR DE ESCANEO -->
+    <div id="scan-error-modal" class="modal-overlay-dark" style="display: none; z-index: 4500;">
+        <div class="modal-motivos-card" style="border: 2px solid #dc3545;">
+            <h4 style="color: #dc3545; margin-bottom: 5px;">🚨 Código Incorrecto</h4>
+            <p id="scan-error-mensaje" style="font-size: 0.85rem; color: #555; margin-bottom: 15px; line-height: 1.3;"></p>
+            <!-- Corregido o verificado: llama a reanudarEscaneoDespuesDeError() -->
+            <button class="btn-motivo-select" style="background-color: #dc3545; color: white; border: none;" onclick="reanudarEscaneoDespuesDeError()">✕ Volver a intentar</button>
+        </div>
+    </div>
+
+    <!-- 6. 🚨 VENTANA EMERGENTE: MODAL OSCURO DE MOTIVOS DE LA BAJA -->
+    <div id="motivos-modal" class="modal-overlay-dark" style="display: none;">
+        <div class="modal-motivos-card">
+            <h4>Seleccionar Motivo de la Baja</h4>
+            <button class="btn-motivo-select" onclick="seleccionarMotivo('Sin Stock')">⚠️ Sin Stock</button>
+            <button class="btn-motivo-select" onclick="seleccionarMotivo('Decisión')">🧠 Decisión</button>
+            <button class="btn-motivo-select" onclick="seleccionarMotivo('Solicitud')">📝 Solicitud</button>
+            <button class="btn-modal-cancel" onclick="cerrarModalMotivos()">Cancelar / Deshacer</button>
+        </div>
+    </div>
+
+    <!-- 7. 🧠 POP-UP CENTRAL PARA MODIFICAR EL STOCK ÓPTIMO -->
+    <div id="optimo-modal" class="modal-overlay-dark" style="display: none;">
+        <div class="modal-motivos-card">
+            <h4 id="optimo-modal-titulo">Modificar Stock Óptimo</h4>
+            <div style="margin: 15px 0;">
+                <input type="number" id="input-optimo-modal" class="input-cantidad" style="width: 80px; font-size: 1.2rem; padding: 6px;" onclick="this.select()">
+            </div>
+            <button class="btn-motivo-select" style="background-color: #007bff; color: white; border: none;" onclick="confirmarGuardadoOptimo()">💾 Guardar Cambios</button>
+            <button class="btn-modal-cancel" onclick="cerrarModalOptimo()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- 8. ⚠️ POP-UP DE CONFIRMACIÓN DE ENVÍO INCOMPLETO -->
+    <div id="confirmar-envio-modal" class="modal-overlay-dark" style="display: none; z-index: 4600;">
+        <div class="modal-motivos-card" style="border: 2px solid #ffc107;">
+            <h4 style="color: #856404; margin-bottom: 5px;">⚠️ Pedido Incompleto</h4>
+            <p style="font-size: 0.85rem; color: #555; margin-bottom: 15px; line-height: 1.3;">
+                Aún quedan productos sin marcar en la lista.<br>¿Estás seguro de que querés enviar el pedido de todas formas?
+            </p>
+            <button class="btn-motivo-select" style="background-color: #28a745; color: white; border: none;" onclick="procesarEnvioFinal(true)">Sí, enviar de todos modos</button>
+            <button class="btn-modal-cancel" onclick="cerrarModalConfirmarEnvio()">No, volver a revisar</button>
+        </div>
+    </div>
+
+    <!-- 9. 📋 POP-UP DE SELECCIÓN DE REMITOS -->
+    <div id="remitos-modal" class="modal-overlay-dark" style="display: none; z-index: 4700;">
+        <div class="modal-motivos-card" style="border: 2px solid #2563eb;">
+            <h4 style="color: #1e293b; margin-bottom: 5px;">📋 Cargas Disponibles</h4>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">Seleccioná el número de remito que vas a gestionar hoy:</p>
+            <div id="remitos-botones-box" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;"></div>
+            <button class="btn-modal-cancel" onclick="cerrarModalSeleccionRemito()">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- 10. 🔓 POP-UP DE CONFIRMACIÓN PARA LIBERAR REMITO -->
+    <div id="confirmar-liberacion-modal" class="modal-overlay-dark" style="display: none; z-index: 4800;">
+        <div class="modal-motivos-card" style="border: 2px solid #dc3545;">
+            <h4 style="color: #dc3545; margin-bottom: 5px;">⚠️ ¿Liberar Carga Actual?</h4>
+            <p style="font-size: 0.85rem; color: #555; margin-bottom: 15px; line-height: 1.3;">
+                Esta acción borrará tu nombre de este pedido en la base de datos y quedará disponible para otros operarios.<br><br>¿Estás seguro de que deseas continuar?
+            </p>
+            <button class="btn-motivo-select" style="background-color: #dc3545; color: white; border: none;" onclick="ejecutarLiberacionBaseDeDatos()">Sí, soltar carga</button>
+            <button class="btn-modal-cancel" onclick="cerrarModalConfirmarLiberacion()">No, seguir armando</button>
+        </div>
+    </div>
+    <!-- 11. 📲 PANEL EMERGENTE DE ACCIONES DE REMITO (DERECHA FIXED) -->
+    <div id="acciones-remito-modal" class="modal-overlay-dark" style="display: none; z-index: 4900;" onclick="cerrarMenuAccionesFlotante()">
+        <div class="modal-motivos-card" style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 360px; margin-bottom: 0; border-radius: 16px;" onclick="event.stopPropagation()">
+            <h4 style="color: #333; margin-bottom: 15px; font-size: 0.95rem;">⚙️ Opciones del Pedido</h4>
+            <button class="btn-motivo-select" style="background-color: #dc3545; color: white;" onclick="abrirModalConfirmarLiberacion()">🔓 Soltar / Liberar Carga</button>
+            <button class="btn-modal-cancel" onclick="cerrarMenuAccionesFlotante()">Cerrar Opciones</button>
+        </div>
+    </div>
+
+    <!-- 12. 🖤 CAPA OSCURA TRASERA PARA EL MENÚ HAMBURGUESA -->
+    <div id="sidebar-overlay" class="overlay"></div>
+
+    <!-- 13. 📦 CONTENEDOR DINÁMICO PRINCIPAL (GRILLA DE PRODUCTOS) -->
+    <main id="contenedor-tarjetas-productos" class="cards-container" style="padding: 15px; margin-top: 10px; margin-bottom: 70px;"></main>
+
+    <!-- 14. 🛠️ BARRA DE HERRAMIENTAS INFERIOR FIJA -->
+    <footer id="panel-filtros-estados" class="bottom-bar"></footer>
+
+    <!-- 🔔 TOAST CENTRAL: ESCANEO CORRECTO (VERDE) -->
+    <div id="toast-scan-exito" style="
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        background-color: #15803d; color: #ffffff; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center; width: 85%; max-width: 300px;
+    ">
+        <span style="font-size: 2.2rem;">✅</span>
+        <span style="font-size: 0.95rem; font-weight: bold;">¡Producto Identificado y Preparado!</span>
+    </div>
+
+    <!-- 🔔 TOAST CENTRAL: ESCANEO INCORRECTO (ROJO) -->
+    <div id="toast-scan-error" style="
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+        background-color: #b91c1c; color: #ffffff; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center; width: 85%; max-width: 300px;
+    ">
+        <span style="font-size: 2.2rem;">❌</span>
+        <span style="font-size: 0.95rem; font-weight: bold;">Código Incorrecto</span>
+        <span id="txt-scan-error-detalle" style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px; line-height: 1.3;">No coincide con el artículo seleccionado.</span>
+    </div>
+
+
+    <!-- 🛠️ VÍNCULO AL SCRIPT PRINCIPAL DE CONTROL -->
+    <script src="app.js"></script>
+</body>
+</html>
